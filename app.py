@@ -125,5 +125,8 @@ def analyze_gap_live(req: LiveGapAnalysisRequest):
 
 @app.get("/")
 def read_root():
-    from fastapi.responses import FileResponse
-    return FileResponse(BASE_DIR / "static" / "index.html")
+    from fastapi.responses import HTMLResponse
+    html_path = BASE_DIR / "static" / "index.html"
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+    return {"error": "index.html not found"}
