@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agent Job Analytics & Career Gap Dashboard</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>AI Agent Career Gap Dashboard</h1>
+            <p class="subtitle">게임/테크 AI 에이전트 공고 검색 & 맞춤형 역량 갭 진단</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 1. 검색 및 공고 목록 섹션 -->
+            <section class="section">
+                <div class="section-title-wrap">
+                    <h2>1. 타깃 공고 검색 및 선택</h2>
+                    <span class="guide-badge">카드를 클릭하면 진단 대상으로 즉시 선택됩니다</span>
+                </div>
+
+                <!-- 실시간 검색 바 -->
+                <div class="search-bar-wrap">
+                    <input type="text" id="search-input" placeholder="회사명, 직무, 기술 키워드 검색 (예: 넷마블, 넥슨, 기획, RAG, QA)" />
+                    <button id="search-btn" class="btn-secondary">검색</button>
+                    <button id="reset-btn" class="btn-outline">초기화</button>
+                </div>
+
+                <div id="job-cards-container" class="cards-grid">
+                    <p class="loading-text">공고 데이터를 불러오는 중...</p>
+                </div>
+            </section>
+
+            <!-- 2. 개인 역량 갭 분석 폼 섹션 -->
+            <section class="section form-section">
+                <h2>2. 나의 역량 기반 Gap 분석</h2>
+                <form id="gap-form" class="gap-form">
+                    <div class="form-group">
+                        <label for="target-job-select">선택된 타깃 공고</label>
+                        <select id="target-job-select" required>
+                            <option value="">위 목록에서 카드를 클릭하거나 직접 선택하세요</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="user-experience">나의 기존 경력 및 보유 역량</label>
+                        <textarea id="user-experience" rows="5"
+                            placeholder="예: 게임 기획(시나리오/퀘스트/시스템) 5년 경력 보유. 현재 파이썬 기초 및 FastAPI 환경을 공부 중이며, 인게임 데이터를 활용한 자동화 에이전트 개발에 관심이 많음."
+                            required></textarea>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="btn-primary">선택한 공고와 AI 역량 갭 진단 실행</button>
+                </form>
+
+                <!-- 3. AI 진단 결과 영역 -->
+                <div id="result-container" class="result-container hidden">
+                    <h3>3. AI 맞춤 진단 리포트</h3>
+
+                    <div class="result-card">
+                        <h4>보유 강점 (Strengths)</h4>
+                        <ul id="res-strengths"></ul>
+                    </div>
+
+                    <div class="result-card alert-card">
+                        <h4>핵심 결손 역량 (Critical Gaps)</h4>
+                        <ul id="res-gaps"></ul>
+                    </div>
+
+                    <div class="result-card">
+                        <h4>우선 학습 로드맵 (Learning Priority)</h4>
+                        <ul id="res-priority"></ul>
+                    </div>
+
+                    <div class="result-card highlight-card">
+                        <h4>추천 포트폴리오 프로젝트 (Recommended Project)</h4>
+                        <p id="res-project"></p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>
