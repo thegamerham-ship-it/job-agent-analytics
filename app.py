@@ -37,26 +37,32 @@ def search_live_jobs(keyword: str = Query(..., description="검색할 채용 키
 
     prompt = f"""
 당신은 대한민국 테크/게임 업계 전문 헤드헌터입니다.
-웹 검색을 통해 2026년 기준 사람인, 원티드, 잡코리아 및 기업 채용 페이지에서 
-'{keyword}'와 관련된 [AI Agent, LLM, 생성형 AI, 자동화, 데이터/시나리오 기획] 분야의 실제 최신 채용 공고 5~6개를 선별하여 분석하세요.
-단순 일반 웹/인프라 공고는 제외하고, AI 모델 연동 및 지능형 에이전트와 연관된 포지션을 우선적으로 찾아야 합니다.
+웹 검색을 통해 2026년 기준 사람인, 원티드, 잡코리아, 각 기업 공식 채용 사이트 등에서 
+'{keyword}'와 관련된 [AI Agent, LLM, 생성형 AI, 자동화] 분야의 실제 최신 채용 공고 5~6개를 선별하여 분석하세요.
 
-반드시 아래 JSON 배열 규격으로만 응답하세요. 다른 설명 없이 오직 JSON만 반환해야 합니다:
-[
-  {{
-    "id": "고유ID(예: job-1)",
-    "company": "회사명",
-    "role": "채용 포지션명",
-    "domain": "분야/도메인",
-    "must_have": ["필수 자격 요건 3~4개"],
-    "nice_to_have": ["우대 요건 3~4개"],
-    "summary": "주요 업무 및 공고 요약"
-  }}
-]
+반드시 아래 JSON 구조로만 응답하세요. 다른 설명 없이 오직 JSON만 반환해야 합니다:
+{{
+  "search_logs": {{
+    "success_sites": ["정보 수집에 성공한 채용 사이트 명칭들"],
+    "failed_or_blocked_sites": ["접근이 막혔거나 정보를 가져오지 못한 사이트 명칭들"]
+  }},
+  "jobs": [
+    {{
+      "id": "job-1",
+      "company": "회사명",
+      "role": "채용 포지션명",
+      "domain": "분야/도메인",
+      "source_site": "출처 사이트명 (예: 원티드, 사람인)",
+      "job_url": "해당 공고를 찾을 수 있는 채용 플랫폼 검색 URL 또는 공식 채용 페이지 주소",
+      "must_have": ["필수 자격 요건 3~4개"],
+      "nice_to_have": ["우대 요건 3~4개"],
+      "summary": "주요 업무 및 공고 요약"
+    }}
+  ]
+}}
 """
 
     try:
-        # 검색 도구 활성화 (response_mime_type 충돌을 피해 텍스트 추출 후 파싱)
         response = client.models.generate_content(
             model="gemini-3.6-flash",
             contents=prompt,
@@ -68,13 +74,12 @@ def search_live_jobs(keyword: str = Query(..., description="검색할 채용 키
         
         raw_text = response.text or ""
         if not raw_text and response.candidates:
-            # candidate 내부 파트에서 텍스트 수집
             for part in response.candidates[0].content.parts:
                 if getattr(part, 'text', None):
                     raw_text += part.text
 
-        jobs_data = extract_json(raw_text)
-        return jobs_data
+        parsed_data = extract_json(raw_text)
+        return parsed_data
 
     except Exception as e:
         print(f"SEARCH ERROR: {e}")

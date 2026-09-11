@@ -20,21 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // 실시간 잡 사이트 검색 요청 함수
     async function searchLiveJobs(keyword) {
         if (!keyword) {
-            alert('검색어를 입력해주세요. (예: 게임, AI 에이전트, 넷마블)');
+            alert('검색어를 입력해주세요. (예: 게임, AI 에이전트, 넥슨)');
             return;
         }
 
-        jobCardsContainer.innerHTML = '<p class="loading-text">인터넷 잡 사이트에서 최신 공고를 실시간 수집 및 분석 중입니다...</p>';
+        jobCardsContainer.innerHTML = '<p class="loading-text">인터넷 잡 사이트들을 탐색하며 최신 공고를 수집 및 분석 중입니다... (약 5~10초 소요)</p>';
+        document.getElementById('access-report-box').classList.add('hidden');
         searchBtn.disabled = true;
 
         try {
             const res = await fetch(`/api/jobs/live?keyword=${encodeURIComponent(keyword)}`);
             if (!res.ok) throw new Error('공고 실시간 수집에 실패했습니다.');
 
-            const jobs = await res.json();
+            const data = await res.json();
+            // 새로운 응답 구조 (data.jobs 와 data.search_logs 분기 처리)
+            const jobs = data.jobs || data;
+            const logs = data.search_logs;
+
             currentJobs = jobs;
             selectedJob = null;
 
+            renderAccessReport(logs);
             renderJobCards(jobs);
             populateJobSelect(jobs);
         } catch (error) {
@@ -43,6 +49,26 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             searchBtn.disabled = false;
         }
+    }
+
+    function renderAccessReport(logs) {
+        const reportBox = document.getElementById('access-report-box');
+        const successSpan = document.getElementById('report-success');
+        const failedSpan = document.getElementById('report-failed');
+
+        if (!logs) {
+            reportBox.classList.add('hidden');
+            return;
+        }
+
+        const successList = logs.success_sites ? logs.success_sites.join(', ') : '없음';
+        const failedList = logs.failed_or_blocked_sites && logs.failed_or_blocked_sites.length > 0
+            ? logs.failed_or_blocked_sites.join(', ')
+            : '차단/누락된 사이트 없음';
+
+        successSpan.textContent = `✅ 수집 성공: [${successList}]`;
+        failedSpan.textContent = `❌ 접근 실패/미수집: [${failedList}]`;
+        reportBox.classList.remove('hidden');
     }
 
     function renderJobCards(jobs) {
@@ -57,10 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
             card.className = 'job-card';
             card.dataset.jobId = job.id;
 
+            // 회사 이름을 이용해 사람인 통합 검색 결과 페이지로 바로 연결
+            const searchQuery = encodeURIComponent(job.company);
+            const targetUrl = `https://www.saramin.co.kr/zf_user/search/recruit?searchword=${searchQuery}`;
+            // ----------------------------------------------------
+
             card.innerHTML = `
         <div class="card-header">
-          <span class="company-name">${job.company}</span>
-          <h3 class="role-title">${job.role}</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span class="company-name">${job.company}</span>
+            <span style="font-size: 0.75rem; background: #334155; padding: 2px 6px; border-radius: 4px; color: #38bdf8;">출처: ${job.source_site || '웹 크롤링'}</span>
+          </div>
+          <h3 class="role-title" style="margin-top: 5px;">${job.role}</h3>
           <span class="domain-badge">${job.domain || 'IT/게임'}</span>
         </div>
         <p style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #cbd5e1;">${job.summary || ''}</p>
@@ -74,6 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
         <ul class="skills-list">
           ${(job.nice_to_have || []).map(skill => `<li>${skill}</li>`).join('')}
         </ul>
+
+        <div style="margin-top: 10px; text-align: right;">
+          <a href="${job.job_url || '#'}" target="_blank" class="job-link-btn" style="font-size: 0.8rem; color: #38bdf8; text-decoration: underline;" onclick="event.stopPropagation();">공고 원문 바로가기 🔗</a>
+        </div>
       `;
 
             card.addEventListener('click', () => {
